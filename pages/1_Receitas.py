@@ -24,7 +24,7 @@ def save_pdf(filename, patient_name, document_text, document_date=None, include_
     pdf.set_auto_page_break(auto=True, margin=30)
     pdf.add_page()
     pdf.set_font("Helvetica", size = 12)
-    pdf.cell(0, 10, txt = "RECEITA ODONTOLÓGICA", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align = 'C')
+    pdf.cell(0, 10, txt = "RECEITUÁRIO", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align = 'C')
     pdf.cell(0, 10, txt = f"Nome: {patient_name}", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align = 'L')
     pdf.ln(10)
     pdf.multi_cell(0, 10, txt = document_text)
