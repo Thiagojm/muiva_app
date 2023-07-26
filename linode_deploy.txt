@@ -1,0 +1,149 @@
+Securing Your Server
+1. create a new user (replace newuser with the desired username), type:
+
+sudo adduser newuser
+sudo passwd newuser
+sudo usermod -aG sudo newuser # add to sudo group
+
+
+2. Firewall
+sudo apt-get install -y ufw
+sudo ufw allow ssh
+sudo ufw allow http
+sudo ufw allow 443/tcp
+sudo ufw --force enable
+sudo ufw status
+
+3. Install Miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+
+4. Install dependencies
+sudo apt-get -y install nginx git
+
+5. Clone repo
+git clone repo
+cd to the repo
+pip install -r requirements.txt
+
+6. Create .streamlit/.secrets.toml
+nano .streamlit/secrets.toml # save inside your secrets, base file is secrets.toml.default
+
+7. Add service to start streamlit, replace your_service:
+
+sudo nano /etc/systemd/system/your_service.service
+
+    [Unit]
+    Description=Your App
+    After=network.target
+
+    [Service]
+    ExecStart=/home/ubuntu/miniconda3/bin/streamlit run /home/ubuntu/your_app/main.py
+    WorkingDirectory=/home/ubuntu/your_app
+    User=ubuntu
+    Group=ubuntu
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
+
+sudo systemctl daemon-reload
+sudo systemctl enable your_service.service
+sudo systemctl start your_service.service
+sudo systemctl status your_service.service
+
+8. Test your server:
+sudo ufw allow 8501
+sudo ufw status
+
+Go to webbrowser and type your_linode_ip:8501
+Then disable the port 8501 if everything is working
+
+sudo ufw delete allow 8501
+sudo ufw status
+
+9. Nginx config:
+Make a temporary certificate:
+# Make certs inside your_app folder
+
+mkdir certs
+openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
+  -keyout certs/key.pem -out certs/cert.pem
+
+# Config nginx
+sudo nano /etc/nginx/sites-available/streamlit
+
+# Put this in the file and save it
+
+upstream ws-backend {
+  
+    server localhost:8501; # this should be your application running in ip and port
+  
+  }
+
+server {
+    # listen on port 80 (http)
+    listen 80;
+    server_name your_server_external_ip;
+    location / {
+        # redirect any requests to the same URL but on https
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl; # this port will listen, if you don't have ssl, remove ssl word
+    server_name  your_server_external_ip;
+
+    ssl_certificate     /home/ubuntu/muiva_app/certs/cert.pem; # comment it, if you don't have ssl_certificate (i.e .crt file)
+    ssl_certificate_key /home/ubuntu/muiva_app/certs/key.pem; # comment it, if you don't have ssl_certificate_key (i.e .key file)
+    ssl_protocols       TLSv1 TLSv1.1 TLSv1.2; # comment it, if you don't have ssl
+    ssl_ciphers         HIGH:!aNULL:!MD5; # comment it, if you don't have ssl
+    client_max_body_size 100M; # It allows files below 100Mb, change it based on your use
+
+    location / {
+      
+      proxy_pass http://ws-backend;
+      
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header Host $http_host;
+      proxy_redirect off;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+    }
+  }
+
+sudo ln -s /etc/nginx/sites-available/streamlit /etc/nginx/sites-enabled
+
+sudo nginx -t
+
+sudo service nginx reload
+
+Go to webbrowser and type your_linode_ip and test it
+
+10. Adding a domain
+- Buy a domain in namecheap
+- Go to namecheap dashboard and click MANAGE
+- On Advanced DNS:
+    Add a A Record. Host = @ Value = your_linode_ip
+- Save
+
+Change nginx config:
+sudo nano /etc/nginx/sites-available/streamlit
+
+Change in "server" server_name to your domain name
+
+sudo service nginx reload
+
+11. Certbot
+# Install certs
+https://certbot.eff.org/instructions
+
+sudo snap install --classic certbot
+
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+
+sudo certbot --nginx
+
+Voilla
