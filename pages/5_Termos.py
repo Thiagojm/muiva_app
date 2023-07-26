@@ -42,8 +42,6 @@ def save_pdf(pdf, patient_name, document_text, cirurgia_name, observacao, docume
 
 def main():
      # Create or get the session state
-    if "session" not in st.session_state:
-        st.session_state.session = qm.SessionState()
         
     if 'patient_name' not in st.session_state:
         st.session_state['patient_name'] = ''  
@@ -103,9 +101,7 @@ if __name__ == "__main__":
     st.secrets['cookie']['key'],
     st.secrets['cookie']['expiry_days'],
     st.secrets['preauthorized']
-)
-    table_pass = st.secrets['table_pass']["pass"]
-    
+)    
     name, authentication_status, username = authenticator.login("Login", "main")
     if authentication_status == False:
         st.error("Username/password is incorrect")
