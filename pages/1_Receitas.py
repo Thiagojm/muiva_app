@@ -40,8 +40,6 @@ def main():
     if 'patient_name' not in st.session_state:
         st.session_state['patient_name'] = ''
     
-    # Cria o menu suspenso na barra lateral com as opções e as tabelas em ordem
-    authenticator.logout("Logout", "sidebar")
     
     st.title('Receitas')
     receitas_folder = "src/receitas"
@@ -53,6 +51,9 @@ def main():
         'Que tipo de documento você gostaria de criar?',
         document_type
     )
+    
+    # Cria o menu suspenso na barra lateral com as opções e as tabelas em ordem
+    authenticator.logout("Logout", "sidebar")
     
     # add the .txt extension back onto the selected file name
     selected_file_with_ext = selected_file + '.txt'

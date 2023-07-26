@@ -49,9 +49,6 @@ def main():
     if 'cirurgia_name' not in st.session_state:
         st.session_state['cirurgia_name'] = ''  
     
-    # Cria o menu suspenso na barra lateral com as opções e as tabelas em ordem
-    authenticator.logout("Logout", "sidebar")
-    
     st.title('Termos de Consentimento')
     receitas_folder = "src/termos"
 
@@ -63,6 +60,8 @@ def main():
         document_type
     )
 
+    # Cria o menu suspenso na barra lateral com as opções e as tabelas em ordem
+    authenticator.logout("Logout", "sidebar")
     
     # add the .txt extension back onto the selected file name
     selected_file_with_ext = selected_file + '.txt'
