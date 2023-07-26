@@ -1,3 +1,9 @@
+Deploy/Host a Streamlit app in a Linode Server using Nginx with SSL
+
+Make a Linode server, in this case is a Ubuntu one.
+
+Acess it in "Launch LISH Console"
+
 Securing Your Server
 1. create a new user (replace newuser with the desired username), type:
 
@@ -5,8 +11,11 @@ sudo adduser newuser
 sudo passwd newuser
 sudo usermod -aG sudo newuser # add to sudo group
 
+Close and relog using your new user in the terminal:
+ssh newuser@your_linode_ip
 
-2. Firewall
+2. Setting up the Firewall
+
 sudo apt-get install -y ufw
 sudo ufw allow ssh
 sudo ufw allow http
@@ -17,47 +26,66 @@ sudo ufw status
 3. Install Miniconda
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
+reboot to activate or run: conda activate
 
 4. Install dependencies
 sudo apt-get -y install nginx git
 
 5. Clone repo
-git clone repo
-cd to the repo
+git clone your_app
+cd your_app # go to your app folder
 pip install -r requirements.txt
 
-6. Create .streamlit/.secrets.toml
-nano .streamlit/secrets.toml # save inside your secrets, base file is secrets.toml.default
+6. Create .streamlit/.secrets.toml and config.toml
+nano .streamlit/secrets.toml # save inside your secrets
+
+nano .streamlit/config.toml
+
+Put this inside and save:
+>
+  [server]
+  port = 8501 # change port number. By default streamlit uses 8501 port
+  headless=true # This will eliminate automatically open browser
+  # enableCORS=false 
+  # enableXsrfProtection=false 
+  # enableWebsocketCompression=false
+  [browser] # This ip and port will show in command prompt
+  serverAddress = "localhost" # You also can put your Local IP or Domain Name
+  gatherUsageStats = false
+  serverPort = 8501  
 
 7. Add service to start streamlit, replace your_service:
 
 sudo nano /etc/systemd/system/your_service.service
 
-    [Unit]
-    Description=Your App
-    After=network.target
+Put this inside, edit paths and your main python script name and save:
 
-    [Service]
-    ExecStart=/home/ubuntu/miniconda3/bin/streamlit run /home/ubuntu/your_app/main.py
-    WorkingDirectory=/home/ubuntu/your_app
-    User=ubuntu
-    Group=ubuntu
-    Restart=always
+>
+  [Unit]
+  Description=Your App
+  After=network.target
 
-    [Install]
-    WantedBy=multi-user.target
+  [Service]
+  ExecStart=/home/ubuntu/miniconda3/bin/streamlit run /home/ubuntu/your_app/main.py
+  WorkingDirectory=/home/ubuntu/your_app
+  User=ubuntu
+  Group=ubuntu
+  Restart=always
+
+  [Install]
+  WantedBy=multi-user.target
 
 sudo systemctl daemon-reload
 sudo systemctl enable your_service.service
 sudo systemctl start your_service.service
-sudo systemctl status your_service.service
+sudo systemctl status your_service.service # check if it is ok
 
 8. Test your server:
 sudo ufw allow 8501
 sudo ufw status
 
 Go to webbrowser and type your_linode_ip:8501
-Then disable the port 8501 if everything is working
+Then disable the port 8501 if everything is working fine
 
 sudo ufw delete allow 8501
 sudo ufw status
@@ -73,77 +101,97 @@ openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
 # Config nginx
 sudo nano /etc/nginx/sites-available/streamlit
 
-# Put this in the file and save it
+# Put this inside the file, edit your app folder, the linode ip and save it
 
-upstream ws-backend {
-  
-    server localhost:8501; # this should be your application running in ip and port
-  
+>
+  upstream ws-backend {
+    
+      server localhost:8501; # this should be your application running in ip and port
+    
+    }
+
+  server {
+      # listen on port 80 (http)
+      listen 80;
+      server_name your_linode_ip;
+      location / {
+          # redirect any requests to the same URL but on https
+          return 301 https://$host$request_uri;
+      }
   }
 
-server {
-    # listen on port 80 (http)
-    listen 80;
-    server_name your_server_external_ip;
-    location / {
-        # redirect any requests to the same URL but on https
-        return 301 https://$host$request_uri;
+  server {
+      listen 443 ssl; # this port will listen, if you don't have ssl, remove ssl word
+      server_name  your_linode_ip;
+
+      ssl_certificate     /home/ubuntu/your_app/certs/cert.pem; # comment it, if you don't have ssl_certificate (i.e .crt file)
+      ssl_certificate_key /home/ubuntu/your_app/certs/key.pem; # comment it, if you don't have ssl_certificate_key (i.e .key file)
+      ssl_protocols       TLSv1 TLSv1.1 TLSv1.2; # comment it, if you don't have ssl
+      ssl_ciphers         HIGH:!aNULL:!MD5; # comment it, if you don't have ssl
+      client_max_body_size 100M; # It allows files below 100Mb, change it based on your use
+
+      location / {
+        
+        proxy_pass http://ws-backend;
+        
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
     }
-}
-
-server {
-    listen 443 ssl; # this port will listen, if you don't have ssl, remove ssl word
-    server_name  your_server_external_ip;
-
-    ssl_certificate     /home/ubuntu/muiva_app/certs/cert.pem; # comment it, if you don't have ssl_certificate (i.e .crt file)
-    ssl_certificate_key /home/ubuntu/muiva_app/certs/key.pem; # comment it, if you don't have ssl_certificate_key (i.e .key file)
-    ssl_protocols       TLSv1 TLSv1.1 TLSv1.2; # comment it, if you don't have ssl
-    ssl_ciphers         HIGH:!aNULL:!MD5; # comment it, if you don't have ssl
-    client_max_body_size 100M; # It allows files below 100Mb, change it based on your use
-
-    location / {
-      
-      proxy_pass http://ws-backend;
-      
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header Host $http_host;
-      proxy_redirect off;
-      proxy_http_version 1.1;
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
-    }
-  }
 
 sudo ln -s /etc/nginx/sites-available/streamlit /etc/nginx/sites-enabled
 
-sudo nginx -t
+sudo nginx -t # check if it is ok
 
 sudo service nginx reload
 
-Go to webbrowser and type your_linode_ip and test it
+Go to webbrowser and type your_linode_ip and test it - you should get a warning, just accept the risk for now
 
-10. Adding a domain
-- Buy a domain in namecheap
+10. Adding a domain:
+- Buy a domain in namecheap etc
 - Go to namecheap dashboard and click MANAGE
-- On Advanced DNS:
+- On Advanced DNS tab:
     Add a A Record. Host = @ Value = your_linode_ip
 - Save
+
+Back to the linode terminal:
 
 Change nginx config:
 sudo nano /etc/nginx/sites-available/streamlit
 
-Change in "server" server_name to your domain name
+Change the two lines that contains server_name and put your domain name there, i.e:
+> 
+  server {
+    # listen on port 80 (http)
+    listen 80;
+    server_name your_domain; # change here
+    location / {
+        # redirect any requests to the same URL but on https
+        return 301 https://$host$request_uri;
+    }
+  }
+  ...
+  server {
+      listen 443 ssl; # this port will listen, if you don't have ssl, remove ssl word
+      server_name your_domain; # change here
+      ...
+  }
 
 sudo service nginx reload
 
-11. Certbot
-# Install certs
-https://certbot.eff.org/instructions
+11. Certbot to install SSL - Guide here: https://certbot.eff.org/instructions
+# Install SSL certs
 
 sudo snap install --classic certbot
 
 sudo ln -s /snap/bin/certbot /usr/bin/certbot
 
 sudo certbot --nginx
+
+Follow along the install process
 
 Voilla
