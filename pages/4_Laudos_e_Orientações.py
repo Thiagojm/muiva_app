@@ -3,7 +3,6 @@ from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 import os
 import streamlit_authenticator as stauth
-import modules.qmod as qm
 from modules.cred_file import *
 from modules.mongo_mod import *
 

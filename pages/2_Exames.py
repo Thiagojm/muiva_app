@@ -1,7 +1,6 @@
 import streamlit as st
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
-import modules.qmod as qm
 import streamlit_authenticator as stauth
 import os
 from modules.cred_file import *
