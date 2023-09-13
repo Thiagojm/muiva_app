@@ -3,9 +3,10 @@ from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 import os
 import streamlit_authenticator as stauth
-import qmod as qm
-import template as tp
-from cred_file import *
+import modules.qmod as qm
+import modules.template as tp
+from modules.cred_file import *
+from modules.mongo_mod import *
 
 
 class CustomPDF(FPDF):
@@ -26,7 +27,7 @@ class CustomPDF(FPDF):
         self.multi_cell(0, 6, txt=FOOTER, align='C')
 
 
-def save_pdf(pdf, patient_name, document_text, cirurgia_name, observacao, document_date=None, include_date=False):
+def save_pdf(pdf, patient_name, document_text, cirurgia_name, observacao, termo_template, document_date=None, include_date=False):
     pdf.set_auto_page_break(auto=True, margin=25)
     pdf.add_page()
     pdf.set_font("Helvetica", size=10)
@@ -39,7 +40,8 @@ def save_pdf(pdf, patient_name, document_text, cirurgia_name, observacao, docume
             pdf.ln(5)
             pdf.multi_cell(0, 6, txt=f"Observações: {observacao}")
         pdf.add_page()
-    termo_result = tp.change_template(patient_name, cirurgia_name)
+    termo_result = tp.change_template(
+        patient_name, cirurgia_name, termo_template)
     pdf.ln(5)
     pdf.multi_cell(0, 5, txt=termo_result)
     if include_date and document_date is not None:
@@ -56,37 +58,39 @@ def main():
     if 'cirurgia_name' not in st.session_state:
         st.session_state['cirurgia_name'] = ''
 
+    # Start Db
+    # Create a connection using MongoClient
+    client = init_connection()
+
+    # Connect to the desired database
+    db = client.mony_db
+
     # Cria o menu suspenso na barra lateral com as opções e as tabelas em ordem
     authenticator.logout("Logout", "sidebar")
 
     st.title('Termos de Consentimento')
 
-    receitas_folder = "src/termos"
-
     patient_name = st.text_input(
         'Nome do Paciente', value=st.session_state.patient_name, key="pacient_name")
     st.session_state.patient_name = patient_name
 
-    # list all .txt files in the 'src/receitas' directory
-    document_type = sorted([os.path.splitext(f)[0]
-                           for f in os.listdir(receitas_folder) if f.endswith('.txt')])
+    # list all documents in the 'Atestados' collection
+    termos_coll = "Termos"
+    documents = list_field_names(db, termos_coll)
 
     selected_file = st.selectbox(
         'Selecione um template.',
-        document_type
+        documents
     )
 
-    # add the .txt extension back onto the selected file name
-    selected_file_with_ext = selected_file + '.txt'
-    # read the selected file and put its contents into the 'document_text' variable
-    with open(os.path.join(receitas_folder, selected_file_with_ext), 'r', encoding="UTF-8") as file:
-        document_text = file.read()
+    # get value from document
+    doc_value = get_document_content(db, termos_coll, selected_file)
 
     cirurgia_name = st.text_input(
         'Qual Cirurgia?', value=st.session_state.cirurgia_name, key="cirurgia_name")
     observacao = st.text_area('Observações', value="")
     document_text = st.text_area(
-        'Texto do Documento', height=300, value=document_text)
+        'Texto do Documento', height=300, value=doc_value)
     document_date = st.date_input('Data do Documento', value=None)
     include_date = st.checkbox('Incluir data no documento')
 
@@ -94,8 +98,9 @@ def main():
     if colb1.button('Criar Documento'):
         filename = "my_pdf.pdf"
         pdf = CustomPDF(orientation="P", unit="mm", format="A4")
+        termo_template = get_document_content(db, "outros", "Termo Geral")
         save_pdf(pdf, patient_name, document_text, cirurgia_name,
-                 observacao, document_date, include_date)
+                 observacao, termo_template, document_date, include_date)
         # Output the PDF
         pdf.output(filename)
 

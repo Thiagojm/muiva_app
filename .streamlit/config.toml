@@ -8,3 +8,5 @@ headless=true # This will eliminate automatically open browser
 serverAddress = "localhost" # Put your Local IP or Domain Name
 gatherUsageStats = false
 serverPort = 8501  
+[global]
+disableWidgetStateDuplicationWarning = true

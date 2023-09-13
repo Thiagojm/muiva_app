@@ -1,16 +1,13 @@
 import streamlit as st
 import streamlit_authenticator as stauth
-import qmod as qm
+from modules.mongo_mod import *
 
 
 def main():
-        
+
     # Cria o menu suspenso na barra lateral com as opções e as tabelas em ordem
     st.sidebar.markdown(f"Bem vinda {name}!")
     authenticator.logout("Logout", "sidebar")
-
-        
-            
 
     ####### Pagina principal #######
 
@@ -19,20 +16,22 @@ def main():
     # Header
     st.header("Página Dra. Monyque Cunha Trindade")
     st.divider()
-    
+
     st.image("src/outros/muiva.jpg", caption="Muivinha Linda")
-    
+
+
 if __name__ == "__main__":
     # Create an instance of the Authenticate class
     authenticator = stauth.Authenticate(
-    dict(st.secrets['credentials']),
-    st.secrets['cookie']['name'],
-    st.secrets['cookie']['key'],
-    st.secrets['cookie']['expiry_days'],
-    st.secrets['preauthorized']
-)
-    
-    name, authentication_status, username = authenticator.login("Login", "main")
+        dict(st.secrets['credentials']),
+        st.secrets['cookie']['name'],
+        st.secrets['cookie']['key'],
+        st.secrets['cookie']['expiry_days'],
+        st.secrets['preauthorized']
+    )
+
+    name, authentication_status, username = authenticator.login(
+        "Login", "main")
     if authentication_status == False:
         st.error("Username/password is incorrect")
 
@@ -41,4 +40,3 @@ if __name__ == "__main__":
 
     if authentication_status:
         main()
-    
