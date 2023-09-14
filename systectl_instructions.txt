@@ -1,15 +1,15 @@
 To create this file:
 
-sudo nano /etc/systemd/system/str-cirurgia.service
+sudo nano /etc/systemd/system/muiva.service
 -----------
 
 [Unit]
-Description=Streamlit Cirurgia
+Description=Streamlit Muiva
 After=network.target
 
 [Service]
-ExecStart=/home/ubuntu/miniconda/bin/streamlit run /home/ubuntu/str_cirurgia/Home.py
-WorkingDirectory=/home/ubuntu/str_cirurgia
+ExecStart=/home/ubuntu/miniconda/bin/streamlit run /home/ubuntu/muiva_app/Inicio.py
+WorkingDirectory=/home/ubuntu/muiva_app
 User=ubuntu
 Group=ubuntu
 Restart=always
@@ -19,27 +19,27 @@ WantedBy=multi-user.target
 
 ---------------
 sudo systemctl daemon-reload
-sudo systemctl enable str-cirurgia.service
-sudo systemctl start str-cirurgia.service
+sudo systemctl enable muiva.service
+sudo systemctl start muiva.service
 
 -----------------
 To enable:
-sudo systemctl enable str-cirurgia.service
+sudo systemctl enable muiva.service
 
 To start:
-sudo systemctl start str-cirurgia.service
+sudo systemctl start muiva.service
 
 To stop:
-sudo systemctl stop str-cirurgia.service
+sudo systemctl stop muiva.service
 
 To status:
-sudo systemctl status str-cirurgia.service
+sudo systemctl status muiva.service
 
 To reload:
 sudo systemctl daemon-reload
 
 To delete:
-sudo systemctl stop str-cirurgia.service
-sudo systemctl disable str-cirurgia.servicee
-sudo rm /etc/systemd/system/str-cirurgia.service
+sudo systemctl stop muiva.service
+sudo systemctl disable muiva.service
+sudo rm /etc/systemd/system/muiva.service
 sudo systemctl daemon-reload
