@@ -6,6 +6,7 @@ import streamlit_authenticator as stauth
 import modules.template as tp
 from modules.cred_file import *
 from modules.mongo_mod import *
+import modules.qmod as qm
 
 
 class CustomPDF(FPDF):
