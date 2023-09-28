@@ -4,7 +4,9 @@ from modules.mongo_mod import *
 
 
 def main():
-
+    if 'patient_name' not in st.session_state:
+        st.session_state['patient_name'] = ''
+    
     # Cria o menu suspenso na barra lateral com as opções e as tabelas em ordem
     st.sidebar.markdown(f"Bem vinda {name}!")
     authenticator.logout("Logout", "sidebar")
