@@ -1,33 +1,41 @@
+import os
 import streamlit as st
 import streamlit_authenticator as stauth
-from modules.mongo_mod import *
+import base64
 
 
 st.set_page_config(
-    page_title="Home",
+    page_title="Internação",
     page_icon="🐓",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="auto",
 )
 
 
+def show_pdf(file_path):
+    with open(file_path, "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="1000" height="1500" type="application/pdf"></iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
+
+
 def main():
-    if 'patient_name' not in st.session_state:
-        st.session_state['patient_name'] = ''
 
     # Cria o menu suspenso na barra lateral com as opções e as tabelas em ordem
-    st.sidebar.markdown(f"Bem vinda {name}!")
     authenticator.logout("Logout", "sidebar")
 
-    ####### Pagina principal #######
+    st.title('Guia de Internação')
+    filename = "src/Internacao.pdf"
+    show_pdf(filename)
 
-    ####### IMC #######
-
-    # Header
-    st.header("Página Dra. Monyque Cunha Trindade")
     st.divider()
 
-    st.image("src/outros/muiva.jpg", caption="Muivinha Linda")
+    st.markdown("### Guia SADT")
+    # Download the PDF
+    sadt_path = "src/SADT.pdf"
+    if os.access(sadt_path, os.R_OK):
+        with open(sadt_path, "rb") as f:
+            st.download_button('Download SADT', f, file_name="SADT_ITAMED.pdf")
 
 
 if __name__ == "__main__":

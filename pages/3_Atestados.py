@@ -8,6 +8,14 @@ from modules.mongo_mod import *
 import modules.qmod as qm
 
 
+st.set_page_config(
+    page_title="Atestados",
+    page_icon="🐓",
+    layout="centered",
+    initial_sidebar_state="auto",
+)
+
+
 class CustomPDF(FPDF):
     def header(self):
         self.set_font("Helvetica", 'BI', size=14)
@@ -49,7 +57,7 @@ def main():
 
     if 'cirurgia_name' not in st.session_state:
         st.session_state['cirurgia_name'] = ''
-    
+
     # Start Db
     # Create a connection using MongoClient
     client = init_connection()

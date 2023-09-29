@@ -9,6 +9,14 @@ from modules.mongo_mod import *
 import modules.qmod as qm
 
 
+st.set_page_config(
+    page_title="Termos",
+    page_icon="🐓",
+    layout="centered",
+    initial_sidebar_state="auto",
+)
+
+
 class CustomPDF(FPDF):
     def header(self):
         self.set_font("Helvetica", 'BI', size=14)
